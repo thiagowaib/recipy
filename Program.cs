@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Recipy.Data;
+
 namespace Recipy;
 public class Program {
 
@@ -9,6 +12,9 @@ public class Program {
         builder.Services.AddSwaggerGen();           // Swagger
 
         builder.Services.AddControllers();
+        builder.Services.AddDbContext<RecipyContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("RecipyDb"))
+        );
 
         // Cors config
         builder.Services.AddCors((options) =>
@@ -31,15 +37,32 @@ public class Program {
 
         WebApplication app = builder.Build();
 
-        if (app.Environment.IsDevelopment()) {
+        if (app.Environment.IsDevelopment())
+        {
             app.UseSwagger();    // Swagger
             app.UseSwaggerUI();  // Swagger
 
             app.UseDeveloperExceptionPage();
             app.UseCors("DevCors");
-        } else {
+        }
+        else
+        {
             app.UseHttpsRedirection();
             app.UseCors("ProdCors");
+        }
+        
+        using (IServiceScope scope = app.Services.CreateScope())
+        {
+            RecipyContext context = scope.ServiceProvider.GetRequiredService<RecipyContext>();
+            context.Database.OpenConnection();
+
+            string migrationsFolder = Path.Combine(AppContext.BaseDirectory, "Database", "Migrations");
+            IOrderedEnumerable<string> migrations = Directory.GetFiles(migrationsFolder, "*.sql").OrderBy(f => f);
+            foreach(string m in migrations)
+            {
+                Console.WriteLine("Applying Migration: " + m);
+                context.Database.ExecuteSqlRaw(File.ReadAllText(m));
+            }
         }
 
         app.MapControllers();
