@@ -1,0 +1,9 @@
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Users')
+BEGIN
+    CREATE TABLE Users (
+        Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        Username NVARCHAR(100) NOT NULL,
+        PasswordHash NVARCHAR(200) NOT NULL,
+        Email NVARCHAR(150) NOT NULL
+    );
+END
