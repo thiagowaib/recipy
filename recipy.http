@@ -1,6 +1,0 @@
-@recipy_HostAddress = http://localhost:5093
-
-GET {{recipy_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

@@ -1,41 +1,48 @@
-var builder = WebApplication.CreateBuilder(args);
+namespace Recipy;
+public class Program {
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    public static void Main(string[] args)
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+        builder.Services.AddEndpointsApiExplorer(); // Swagger
+        builder.Services.AddSwaggerGen();           // Swagger
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+        builder.Services.AddControllers();
 
-app.UseHttpsRedirection();
+        // Cors config
+        builder.Services.AddCors((options) =>
+        {
+            options.AddPolicy("DevCors", (corsBuilder) =>
+                {
+                    corsBuilder.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:8000")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
+            options.AddPolicy("ProdCors", (corsBuilder) =>
+                {
+                    corsBuilder.WithOrigins("https://myProductionSite.com")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
+        });
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+        WebApplication app = builder.Build();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+        if (app.Environment.IsDevelopment()) {
+            app.UseSwagger();    // Swagger
+            app.UseSwaggerUI();  // Swagger
 
-app.Run();
+            app.UseDeveloperExceptionPage();
+            app.UseCors("DevCors");
+        } else {
+            app.UseHttpsRedirection();
+            app.UseCors("ProdCors");
+        }
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        app.MapControllers();
+        app.Run();
+    }
 }
