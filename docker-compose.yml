@@ -3,7 +3,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver-recipy
     environment:
-      SA_PASSWORD: "R3c1py"
+      SA_PASSWORD: ${DB_PASSWORD}
       ACCEPT_EULA: "1"
       USER: "admin"
       PID: "ADMIN"
