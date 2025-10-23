@@ -13,21 +13,33 @@ public class RecipeController(RecipyContext context) : ControllerBase
     private readonly RecipyContext _context = context;
 
     [HttpGet("GetRecipes")]
-    public IActionResult GetRecipes()
+    public List<RecipeDto> GetRecipes()
     {
-        return Ok(_context.Recipes.ToList());
+        List<RecipeDto> result = [];
+        List<Recipe> recipes   = _context.Recipes.ToList();
+        foreach (Recipe recipe in recipes)
+        {
+            result.Add(new RecipeDto()
+            {
+                Title = recipe.Title,
+                Description = recipe.Description,
+                Ingredients = recipe.Ingredients,
+                Steps = recipe.Steps,
+            });
+        }
+        return result;
     }
 
     [HttpPost("CreateRecipe")]
     [Authorize]
-    public IActionResult CreateRecipe([FromBody] RecipeCreateDto recipeCreateDto)
+    public IActionResult CreateRecipe([FromBody] RecipeDto recipeDto)
     {
         Recipe recipe = new()
         {
-            Title = recipeCreateDto.Title,
-            Description = recipeCreateDto.Description,
-            Ingredients = recipeCreateDto.Ingredients,
-            Steps = recipeCreateDto.Steps,
+            Title = recipeDto.Title,
+            Description = recipeDto.Description,
+            Ingredients = recipeDto.Ingredients,
+            Steps = recipeDto.Steps,
             AuthorId = Guid.Parse(User.Claims.First().Value)
         };
 
