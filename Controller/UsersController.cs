@@ -1,14 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using Recipy.Data;
 using Recipy.Dto.Users;
 using Recipy.Models;
 using Recipy.Repositories.Interfaces;
+using Recipy.Services;
 
 namespace Recipy.Controller;
 
@@ -18,7 +17,7 @@ public class UsersController(IConfiguration config, IUserRepository userRepo) : 
 {
     private readonly IConfiguration _config = config;
     private readonly IUserRepository _userRepo = userRepo;
-    private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly AuthService _authService = new();
 
     [HttpPost("Register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDtro userRegisterDto)
@@ -37,7 +36,7 @@ public class UsersController(IConfiguration config, IUserRepository userRepo) : 
             Username = userRegisterDto.Username,
             Email = userRegisterDto.Email
         };
-        user.PasswordHash = _passwordHasher.HashPassword(user, userRegisterDto.PlainPassword);
+        user.PasswordHash = _authService.HashPassword(user, userRegisterDto.PlainPassword);
 
         await _userRepo.AddAsync(user);
         await _userRepo.SaveChangesAsync();
@@ -57,7 +56,7 @@ public class UsersController(IConfiguration config, IUserRepository userRepo) : 
             }
         }
 
-        if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, userLoginDto.PlainPassword) == PasswordVerificationResult.Failed)
+        if (_authService.Authenticate(user, userLoginDto.PlainPassword))
         {
             return Unauthorized("Incorrect Password");
         }
