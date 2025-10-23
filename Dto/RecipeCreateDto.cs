@@ -1,10 +1,8 @@
-namespace Recipy.Models;
-public class Recipe
+namespace Recipy.Dto;
+public class RecipeCreateDto
 {
-    public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Ingredients { get; set; } = string.Empty;
     public string Steps { get; set; } = string.Empty;
-    public Guid AuthorId { get; set; }
 }
