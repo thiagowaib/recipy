@@ -1,5 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
 using Recipy.Dto;
 using Recipy.Models;
@@ -8,17 +13,12 @@ namespace Recipy.Controller;
 
 [ApiController]
 [Route("[controller]")]
-public class UsersController(RecipyContext context) : ControllerBase
+public class UsersController(RecipyContext context, IConfiguration config) : ControllerBase
 {
 
     private readonly RecipyContext _context = context;
+    private readonly IConfiguration _config = config;
     private readonly PasswordHasher<User> _passwordHasher = new();
-
-    // [HttpGet]
-    // public IActionResult Test()
-    // {
-    //     return Ok(_context.Database.CanConnect());
-    // }
 
     [HttpPost("Register")]
     public IActionResult Register([FromBody] UserRegisterDtro userRegisterDto)
@@ -56,9 +56,36 @@ public class UsersController(RecipyContext context) : ControllerBase
         if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, userLoginDto.PlainPassword) == PasswordVerificationResult.Failed)
         {
             return Unauthorized("Incorrect Password");
-        } else
-        {
-            return Ok();
         }
+        else
+        {
+            string jwtSecret = _config["Jwt:Secret"] ?? "THIS_IS_A_VERY_STRONG_SECRET_KEY";
+            SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(jwtSecret));
+            SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
+
+            Claim[] claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                new Claim("email", user.Email)
+            };
+
+            JwtSecurityToken token = new(
+                issuer: null,
+                audience: null,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: creds
+            );
+
+            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+        }
+    }
+
+    [HttpGet("TestAuth")]
+    [Authorize]
+    public IActionResult TestAuth()
+    {
+        return Ok();
     }
 }

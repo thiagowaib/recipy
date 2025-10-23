@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
 
 namespace Recipy;
@@ -15,6 +18,24 @@ public class Program {
         builder.Services.AddDbContext<RecipyContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("RecipyDb"))
         );
+
+        // JWT & Auth
+        string jwtSecret = builder.Configuration["Jwt:Secret"] ?? "THIS_IS_A_VERY_STRONG_SECRET_KEY";
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+            };
+        });
 
         // Cors config
         builder.Services.AddCors((options) =>
@@ -50,7 +71,7 @@ public class Program {
             app.UseHttpsRedirection();
             app.UseCors("ProdCors");
         }
-        
+
         using (IServiceScope scope = app.Services.CreateScope())
         {
             RecipyContext context = scope.ServiceProvider.GetRequiredService<RecipyContext>();
@@ -58,12 +79,16 @@ public class Program {
 
             string migrationsFolder = Path.Combine(AppContext.BaseDirectory, "Database", "Migrations");
             IOrderedEnumerable<string> migrations = Directory.GetFiles(migrationsFolder, "*.sql").OrderBy(f => f);
-            foreach(string m in migrations)
+            foreach (string m in migrations)
             {
                 Console.WriteLine("Applying Migration: " + m);
                 context.Database.ExecuteSqlRaw(File.ReadAllText(m));
             }
         }
+
+        // JWT & Auth
+        app.UseAuthentication();// Must be Before UseAuthorization
+        app.UseAuthorization();
 
         app.MapControllers();
         app.Run();
