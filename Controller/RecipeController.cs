@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Recipy.Data;
 using Recipy.Dto.Recipe;
 using Recipy.Models;
 using Recipy.Repositories.Interfaces;

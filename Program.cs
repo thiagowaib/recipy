@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
+using Recipy.Middleware;
 using Recipy.Repositories;
 using Recipy.Repositories.Interfaces;
 
@@ -88,6 +89,8 @@ public class Program {
                 context.Database.ExecuteSqlRaw(File.ReadAllText(m));
             }
         }
+
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
 
         // JWT & Auth
         app.UseAuthentication();// Must be Before UseAuthorization
