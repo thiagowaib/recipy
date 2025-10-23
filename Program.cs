@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
+using Recipy.Repositories;
+using Recipy.Repositories.Interfaces;
 
 namespace Recipy;
 public class Program {
@@ -18,6 +20,7 @@ public class Program {
         builder.Services.AddDbContext<RecipyContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("RecipyDb"))
         );
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
 
         // JWT & Auth
         string jwtSecret = builder.Configuration["Jwt:Secret"] ?? "THIS_IS_A_VERY_STRONG_SECRET_KEY";

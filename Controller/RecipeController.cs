@@ -1,22 +1,24 @@
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Recipy.Data;
-using Recipy.Dto;
+using Recipy.Dto.Recipe;
 using Recipy.Models;
+using Recipy.Repositories.Interfaces;
 
 namespace Recipy.Controller;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RecipeController(RecipyContext context) : ControllerBase
+public class RecipeController(IRecipeRepository recipeRepo) : ControllerBase
 {
-    private readonly RecipyContext _context = context;
+    private readonly IRecipeRepository _recipeRrepo = recipeRepo;
 
     [HttpGet("GetRecipes")]
-    public List<RecipeDto> GetRecipes()
+    public async Task<List<RecipeDto>> GetRecipes()
     {
         List<RecipeDto> result = [];
-        List<Recipe> recipes   = _context.Recipes.ToList();
+        List<Recipe> recipes   = await _recipeRrepo.GetAllAsync();
         foreach (Recipe recipe in recipes)
         {
             result.Add(new RecipeDto()
@@ -32,7 +34,7 @@ public class RecipeController(RecipyContext context) : ControllerBase
 
     [HttpPost("CreateRecipe")]
     [Authorize]
-    public IActionResult CreateRecipe([FromBody] RecipeDto recipeDto)
+    public async Task<IActionResult> CreateRecipe([FromBody] RecipeDto recipeDto)
     {
         Recipe recipe = new()
         {
@@ -43,8 +45,8 @@ public class RecipeController(RecipyContext context) : ControllerBase
             AuthorId = Guid.Parse(User.Claims.First().Value)
         };
 
-        _context.Add(recipe);
-        _context.SaveChanges();
+        await _recipeRrepo.AddAsync(recipe);
+        await _recipeRrepo.SaveChangesAsync();
 
         return Ok(recipe);
     }

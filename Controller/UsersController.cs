@@ -6,29 +6,30 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
-using Recipy.Dto;
+using Recipy.Dto.Users;
 using Recipy.Models;
+using Recipy.Repositories.Interfaces;
 
 namespace Recipy.Controller;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController(RecipyContext context, IConfiguration config) : ControllerBase
+public class UsersController(IConfiguration config, IUserRepository userRepo) : ControllerBase
 {
-
-    private readonly RecipyContext _context = context;
     private readonly IConfiguration _config = config;
+    private readonly IUserRepository _userRepo = userRepo;
     private readonly PasswordHasher<User> _passwordHasher = new();
 
     [HttpPost("Register")]
-    public IActionResult Register([FromBody] UserRegisterDtro userRegisterDto)
+    public async Task<IActionResult> Register([FromBody] UserRegisterDtro userRegisterDto)
     {
-        if (_context.Users.Any(
-            u => u.Username == userRegisterDto.Username
-              || u.Email == userRegisterDto.Email
-        ))
+        if (await _userRepo.GetByEmailAsync(userRegisterDto.Email) != null)
         {
-            return BadRequest("Username or email already exists");
+            return BadRequest("Email already being used");
+        }
+        else if(await _userRepo.GetByUsernameAsync(userRegisterDto.Username) != null)
+        {
+            return BadRequest("Username already being used");
         }
 
         User user = new()
@@ -38,19 +39,22 @@ public class UsersController(RecipyContext context, IConfiguration config) : Con
         };
         user.PasswordHash = _passwordHasher.HashPassword(user, userRegisterDto.PlainPassword);
 
-        _context.Users.Add(user);
-        _context.SaveChanges();
+        await _userRepo.AddAsync(user);
+        await _userRepo.SaveChangesAsync();
         return Created();
     }
 
     [HttpPost("Login")]
-    public IActionResult Login([FromBody] UserLoginDto userLoginDto)
+    public async Task<IActionResult> Login([FromBody] UserLoginDto userLoginDto)
     {
-        User? user = _context.Users.Where(u => u.Username == userLoginDto.Username || u.Email == userLoginDto.Email).FirstOrDefault();
-
-        if (user == null)
+        User? user = await _userRepo.GetByEmailAsync(userLoginDto.Email);
+        if(user == null)
         {
-            return BadRequest("User not found");
+            user = await _userRepo.GetByUsernameAsync(userLoginDto.Username);
+            if(user == null)
+            {
+                return BadRequest("User not found");
+            }
         }
 
         if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, userLoginDto.PlainPassword) == PasswordVerificationResult.Failed)
@@ -79,12 +83,5 @@ public class UsersController(RecipyContext context, IConfiguration config) : Con
 
             return Ok(new JwtSecurityTokenHandler().WriteToken(token));
         }
-    }
-
-    [HttpGet("TestAuth")]
-    [Authorize]
-    public IActionResult TestAuth()
-    {
-        return Ok();
     }
 }
