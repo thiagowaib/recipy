@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Recipy.Data;
 using Recipy.Middleware;
@@ -18,8 +19,8 @@ public class Program {
         builder.Services.AddSwaggerGen();           // Swagger
 
         builder.Services.AddControllers();
-        builder.Services.AddDbContext<RecipyContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("RecipyDb"))
+        builder.Services.AddDbContext<RecipyContext>(options => 
+            options.UseSqlServer(builder.Configuration.GetConnectionString("RecipyDb"), opt => opt.EnableRetryOnFailure())
         );
         builder.Services.AddScoped<IUserRepository, UserRepository>();
 
