@@ -18,6 +18,7 @@ public class UsersController(IConfiguration config, IUserRepository userRepo) : 
     private readonly IConfiguration _config = config;
     private readonly IUserRepository _userRepo = userRepo;
     private readonly AuthService _authService = new();
+    private readonly JwtService _jwtService = new(config);
 
     [HttpPost("Register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDtro userRegisterDto)
@@ -62,25 +63,7 @@ public class UsersController(IConfiguration config, IUserRepository userRepo) : 
         }
         else
         {
-            string jwtSecret = _config["Jwt:Secret"] ?? "THIS_IS_A_VERY_STRONG_SECRET_KEY";
-            SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(jwtSecret));
-            SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
-
-            Claim[] claims = [
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-                new Claim("email", user.Email)
-            ];
-
-            JwtSecurityToken token = new(
-                issuer: null,
-                audience: null,
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: creds
-            );
-
-            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+            return Ok(_jwtService.GenerateToken(user));
         }
     }
 }
