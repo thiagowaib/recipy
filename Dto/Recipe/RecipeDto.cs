@@ -1,4 +1,4 @@
-namespace Recipy.Dto;
+namespace Recipy.Dto.Recipe;
 public class RecipeDto
 {
     public string Title { get; set; } = string.Empty;

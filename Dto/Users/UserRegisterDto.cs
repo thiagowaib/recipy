@@ -1,4 +1,4 @@
-namespace Recipy.Dto;
+namespace Recipy.Dto.Users;
 
 public class UserRegisterDtro
 {
