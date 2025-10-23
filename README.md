@@ -37,36 +37,6 @@ All data is persisted in a **SQL Server** database managed through **Entity Fram
 
 ---
 
-## 🧩 Project Structure
-
-```
-
-Recipy/
-├── Controllers/
-│   ├── UsersController.cs
-│   └── RecipesController.cs
-├── Database/
-│   ├── Migrations/
-│   └── RecipyContext.cs
-├── Dto/
-│   ├── UserLoginDto.cs
-│   ├── UserRegisterDto.cs
-│   └── RecipeDto.cs
-├── Models/
-│   ├── User.cs
-│   └── Recipe.cs
-├── Repositories/
-│   ├── IUserRepository.cs
-│   └── UserRepository.cs
-├── Services/
-│   ├── AuthService.cs
-│   └── JwtService.cs
-└── Program.cs
-
-````
-
----
-
 ## 🛠️ Getting Started
 
 ### 1. Clone the repository
